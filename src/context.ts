@@ -89,17 +89,7 @@ export function ensureProjectId(
   providedProjectId: string | undefined,
   defaultProjectId: string | undefined,
 ): string {
-  if (providedProjectId) {
-    return providedProjectId;
-  }
-
-  if (defaultProjectId) {
-    return defaultProjectId;
-  }
-
-  throw new Error(
-    'Project ID is required. Either provide it as a parameter or set UNLEASH_DEFAULT_PROJECT in your .env file.',
-  );
+  return providedProjectId || defaultProjectId || 'default';
 }
 
 /**

@@ -1,6 +1,18 @@
 import { CustomError } from '../utils/errors.js';
 import { VERSION } from '../version.js';
 
+export interface ContextFieldLegalValue {
+  value: string;
+  description?: string;
+}
+
+export interface ContextField {
+  name: string;
+  description?: string | null;
+  stickiness?: boolean;
+  legalValues?: ContextFieldLegalValue[];
+}
+
 /**
  * Feature flag types supported by Unleash.
  * See: https://docs.getunleash.io/reference/feature-toggle-types
@@ -52,7 +64,10 @@ export interface FeatureFlagSummary {
   archived?: boolean;
   impressionData?: boolean;
   createdAt?: string;
-  url: string;
+  stale?: boolean;
+  lastSeenAt?: string | null;
+  tags?: Array<{ type?: string; value?: string }>;
+  environments?: Array<{ name: string; enabled: boolean }>;
 }
 
 export interface StrategyVariantPayload {
@@ -238,7 +253,12 @@ export class UnleashClient {
           type: 'release',
           archived: false,
           impressionData: false,
-          url: `${this.baseUrl}/projects/${encodeURIComponent(projectId)}/features/dry-run-placeholder-flag`,
+          stale: false,
+          lastSeenAt: null,
+          tags: [],
+          environments: [
+            { name: 'development', enabled: false },
+          ],
         },
       ];
     }
@@ -329,6 +349,33 @@ export class UnleashClient {
         networkErrorMessage: `Failed to connect to Unleash API while fetching feature ${featureName}`,
       },
     );
+  }
+
+  async getContextFields(): Promise<ContextField[]> {
+    if (this.dryRun) {
+      return [
+        {
+          name: 'environment',
+          description: 'Dry-run placeholder context field',
+          stickiness: false,
+          legalValues: [
+            { value: 'production', description: 'Production environment' },
+            { value: 'development', description: 'Development environment' },
+          ],
+        },
+      ];
+    }
+
+    const data = await this.requestJson<ContextField[]>(
+      '/api/admin/context',
+      { method: 'GET' },
+      {
+        errorMessage: 'Failed to fetch context fields',
+        networkErrorMessage: 'Failed to connect to Unleash API while fetching context fields',
+      },
+    );
+
+    return Array.isArray(data) ? data : [];
   }
 
   async deleteFeatureStrategy(
@@ -433,6 +480,10 @@ export class UnleashClient {
         impressionData?: boolean;
         createdAt?: string;
         project?: string;
+        stale?: boolean;
+        lastSeenAt?: string | null;
+        tags?: Array<{ type?: string; value?: string }>;
+        environments?: Array<{ name: string; enabled: boolean }>;
       }>;
     }>(
       `/api/admin/projects/${encodeURIComponent(projectId)}/features`,
@@ -456,7 +507,10 @@ export class UnleashClient {
           archived: feature.archived,
           impressionData: feature.impressionData,
           createdAt: feature.createdAt,
-          url: `${this.baseUrl}/projects/${encodeURIComponent(project)}/features/${encodeURIComponent(name)}`,
+          stale: feature.stale,
+          lastSeenAt: feature.lastSeenAt,
+          tags: feature.tags,
+          environments: feature.environments,
         };
       });
   }

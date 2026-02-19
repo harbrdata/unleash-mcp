@@ -48,9 +48,11 @@ import { cleanupFlagTool } from './tools/cleanupFlag.js';
 import { createFlagTool } from './tools/createFlag.js';
 import { detectFlagTool } from './tools/detectFlag.js';
 import { evaluateChangeTool } from './tools/evaluateChange.js';
+import { getContextFieldsTool } from './tools/getContextFields.js';
 import { getFlagStateTool } from './tools/getFlagState.js';
 import { listFlagsTool } from './tools/listFlags.js';
 import { removeFlagStrategyTool } from './tools/removeFlagStrategy.js';
+import { searchFlagsTool } from './tools/searchFlags.js';
 import { setFlagRolloutTool } from './tools/setFlagRollout.js';
 import { toggleFlagEnvironmentTool } from './tools/toggleFlagEnvironment.js';
 import type { ToolDefinition } from './tools/types.js';
@@ -146,6 +148,8 @@ async function main(): Promise<void> {
     setFlagRolloutTool,
     getFlagStateTool,
     listFlagsTool,
+    searchFlagsTool,
+    getContextFieldsTool,
     toggleFlagEnvironmentTool,
     removeFlagStrategyTool,
   ];
