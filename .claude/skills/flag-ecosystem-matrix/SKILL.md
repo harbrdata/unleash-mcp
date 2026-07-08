@@ -42,11 +42,12 @@ Uses the Unleash MCP server (`mcp__Unleash__*`). The two calls that matter:
 2. **Fetch flags + strategies.** Call `search_flags` with the requested filter.
    Default to the flag type the user named (e.g. `{flagType: "release"}`); if they
    want all flags, pass `{environment: "prods"}` (search_flags needs ≥1 filter).
-   Each flag returns an `environments[]` array, each with `enabled` and `strategies[]`.
-   `flagType` is a single value — to cover several types (e.g. "all other types"),
-   make one `search_flags` call per type. Also call `list_flags` with the same filter:
-   it returns the **full, untruncated descriptions** (search_flags truncates long ones)
-   that you'll need for the appendix.
+   Each flag returns an `environments[]` array, each with `enabled` and `strategies[]`,
+   plus a top-level `createdAt` (the flag's **creation date**, already `YYYY-MM-DD`) that
+   feeds the matrix's Created column. `flagType` is a single value — to cover several types
+   (e.g. "all other types"), make one `search_flags` call per type. Also call `list_flags`
+   with the same filter: it returns the **full, untruncated descriptions** (search_flags
+   truncates long ones) — and `createdAt` too — that you'll need for the appendix.
 
 3. **Evaluate the `prods` environment for each flag.** Ecosystems are evaluated in
    their prod context, so use the `prods` environment block. Apply the algorithm in
@@ -57,7 +58,8 @@ Uses the Unleash MCP server (`mcp__Unleash__*`). The two calls that matter:
      ecosystem ❌, regardless of staged strategies. Note in caveats if a 100% catch-all is
      staged behind the off toggle (flipping the env on would turn it ON everywhere at once).
 
-4. **Render the matrix.** One row per flag, columns `Default | <each prod ecosystem>`.
+4. **Render the matrix.** One row per flag, columns `Created | Default | <each prod ecosystem>`,
+   where **Created** is the flag's `createdAt` (`YYYY-MM-DD`; `—` if Unleash has none).
    Order rows so **Default-✅ flags come first** (catch-all 100% rules, then `NOT_IN`
    rules), then **Default-❌ flags** (allowlist-gated), then **dormant** flags (env off,
    ❌ everywhere). This grouping makes the onboarding story readable at a glance.
@@ -78,17 +80,18 @@ Use this exact shape (abbreviate long ecosystem names in headers; give the key b
 **Date:** <date> · **Project:** `default` · **Flags:** N <type>
 
 Rows are flags; columns are prod ecosystems. **Default** = state a new prod ecosystem
-gets if it isn't named in any strategy.
+gets if it isn't named in any strategy. **Created** = the flag's creation date in Unleash.
 
 - ✅ = ON · ❌ = OFF · ◐ = ON for a few named users only
+- **Created** = flag creation date (`YYYY-MM-DD`), or `—` if Unleash has none
 
 **Ecosystem key:** `AZ`=AZ-Demo · `DGE-Pr`=DGE-Prod · … (from get_context_fields)
 
-| Flag | Default | AZ | DGE-PP | DGE-Pr | … |
-|------|:-------:|:--:|:------:|:------:|:--|
-| activityLog | ✅ | ✅ | ✅ | ✅ | … |
-| newSearch   | ❌ | ✅ | ✅ | ✅ | … |
-| …           |    |    |    |    |   |
+| Flag | Created | Default | AZ | DGE-PP | DGE-Pr | … |
+|------|:-------:|:-------:|:--:|:------:|:------:|:--|
+| activityLog | 2024-01-15 | ✅ | ✅ | ✅ | ✅ | … |
+| newSearch   | 2025-06-02 | ❌ | ✅ | ✅ | ✅ | … |
+| …           |            |    |    |    |    |   |
 
 ## How to read the Default column
 - **Default ✅** — has a catch-all / NOT_IN rule, so a new ecosystem is ON automatically.

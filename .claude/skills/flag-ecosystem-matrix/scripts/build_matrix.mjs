@@ -7,9 +7,10 @@
 //        --title "Release" [--env prods] [--out out.md]
 //
 // Each --flags file is the raw `search_flags` result (an object with a `flags`
-// array, or a bare array). Each flag needs `name`, optional `description`, and
-// `environments[]` with `enabled` + `strategies[]` (name, rollout, title,
-// constraints[], segments[]). See references/strategy-evaluation.md for the rules.
+// array, or a bare array). Each flag needs `name`, optional `description`,
+// optional `createdAt` (rendered as the Created column), and `environments[]`
+// with `enabled` + `strategies[]` (name, rollout, title, constraints[],
+// segments[]). See references/strategy-evaluation.md for the rules.
 //
 // NOTE: `search_flags` does not report a strategy's `disabled` flag, so all
 // listed strategies are treated as active. If a flag looks wrong, re-check it
@@ -117,7 +118,7 @@ const rows = flags.map((fl) => {
   const strategies = enabled ? prodEnv.strategies || [] : [];
   const def = enabled ? flagVerdict(strategies, null) : 'none';
   const cells = prodIds.map((id) => (enabled ? flagVerdict(strategies, id) : 'none'));
-  return { name: fl.name, type: fl.type, description: (fl.description || '').replace(/\s+/g, ' ').trim(), enabled, def, cells };
+  return { name: fl.name, type: fl.type, createdAt: (fl.createdAt || '').slice(0, 10), description: (fl.description || '').replace(/\s+/g, ' ').trim(), enabled, def, cells };
 });
 
 // group: Default-on first, then Default-off (env on), then dormant (env off)
@@ -137,10 +138,10 @@ md += `Rows are flags; columns are prod ecosystems. **Default** = state a new pr
 md += `- ✅ = ON · ❌ = OFF · ◐ = ON for named users/orgs only · ☁ = depends on the ecosystem's cloud provider\n\n`;
 md += `**Ecosystem key:** ` + prodIds.map((id) => `\`${header(id)}\`=${idName[id]}`).join(' · ') + `\n\n`;
 
-md += `| Flag | Default | ${prodIds.map(header).join(' | ')} |\n`;
-md += `|------|:-------:|${prodIds.map(() => ':--:').join('|')}|\n`;
+md += `| Flag | Created | Default | ${prodIds.map(header).join(' | ')} |\n`;
+md += `|------|:-------:|:-------:|${prodIds.map(() => ':--:').join('|')}|\n`;
 for (const r of rows) {
-  md += `| ${r.name} | ${SYM[r.def]} | ${r.cells.map((c) => SYM[c]).join(' | ')} |\n`;
+  md += `| ${r.name} | ${r.createdAt || '—'} | ${SYM[r.def]} | ${r.cells.map((c) => SYM[c]).join(' | ')} |\n`;
 }
 
 // auto notes
