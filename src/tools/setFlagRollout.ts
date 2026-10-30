@@ -1,7 +1,11 @@
 import type { CallToolResult } from '@modelcontextprotocol/sdk/types.js';
 import { z } from 'zod';
 import { ensureProjectId, handleToolError, type ServerContext } from '../context.js';
-import type { StrategyVariant, StrategyVariantPayload } from '../unleash/client.js';
+import type {
+  StrategyConstraint,
+  StrategyVariant,
+  StrategyVariantPayload,
+} from '../unleash/client.js';
 import { createFlagResourceLink } from '../utils/streaming.js';
 
 const variantPayloadSchema = z.object({
@@ -23,6 +27,27 @@ const variantSchema = z
   })
   .describe('Strategy-level variant definition');
 
+const constraintSchema = z
+  .object({
+    contextName: z.string().min(1).describe('Context field to constrain on (e.g. "ecosystemId")'),
+    operator: z
+      .string()
+      .min(1)
+      .describe('Unleash constraint operator (e.g. "IN", "NOT_IN", "STR_CONTAINS", "NUM_GT")'),
+    values: z
+      .array(z.string())
+      .optional()
+      .describe('Values for multi-value operators (IN, NOT_IN, STR_*)'),
+    value: z
+      .string()
+      .optional()
+      .describe('Value for single-value operators (NUM_*, DATE_*, SEMVER_*)'),
+    inverted: z.boolean().optional().describe('Negate the constraint result (defaults to false)'),
+  })
+  .describe(
+    'Strategy constraint; all constraints on a strategy must match',
+  ) satisfies z.ZodType<StrategyConstraint>;
+
 const setFlagRolloutSchema = z.object({
   projectId: z
     .string()
@@ -40,6 +65,10 @@ const setFlagRolloutSchema = z.object({
   stickiness: z.string().optional().describe('Stickiness field (defaults to "default")'),
   title: z.string().optional().describe('Optional descriptive title for the strategy'),
   disabled: z.boolean().optional().describe('Disable the strategy (defaults to false)'),
+  constraints: z
+    .array(constraintSchema)
+    .optional()
+    .describe('Optional constraints (AND-ed) limiting who the strategy applies to'),
   variants: z.array(variantSchema).optional().describe('Optional list of strategy-level variants'),
 });
 
@@ -83,6 +112,7 @@ export async function setFlagRollout(
         stickiness: input.stickiness,
         title: input.title,
         disabled: input.disabled,
+        constraints: input.constraints,
         variants,
       },
     );

@@ -84,12 +84,22 @@ export interface StrategyVariant {
   [key: string]: unknown;
 }
 
+export interface StrategyConstraint {
+  contextName: string;
+  operator: string;
+  values?: string[];
+  value?: string;
+  inverted?: boolean;
+  [key: string]: unknown;
+}
+
 export interface SetFlagRolloutOptions {
   rolloutPercentage: number;
   groupId?: string;
   stickiness?: string;
   title?: string;
   disabled?: boolean;
+  constraints?: StrategyConstraint[];
   variants?: StrategyVariant[];
 }
 
@@ -284,6 +294,7 @@ export class UnleashClient {
       title: options.title,
       disabled: options.disabled,
       parameters,
+      ...(options.constraints?.length ? { constraints: options.constraints } : {}),
       ...(options.variants && options.variants.length > 0 ? { variants: options.variants } : {}),
     };
 
@@ -295,6 +306,7 @@ export class UnleashClient {
         disabled: payload.disabled ?? false,
         featureName,
         parameters,
+        constraints: options.constraints ?? [],
         variants: payload.variants ?? [],
       };
     }

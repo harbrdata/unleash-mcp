@@ -49,7 +49,7 @@ const ABBR = {hyfhdikd:'AZ',preprod1:'DGE-PP',production1:'DGE-Pr',staging1:'DGE
 const ctx = JSON.parse(fs.readFileSync(contextFile, 'utf8'));
 const ecoField = ctx.fields.find((f) => f.name === 'ecosystemId');
 const clean = (d) => d.replace(/^\s*\[[^\]]*\]\s*/, '').trim();
-const prodVals = ecoField.legalValues.filter((v) => /\[?\s*PROD/i.test(v.description));
+const prodVals = ecoField.legalValues.filter((v) => /\[PRODs?\]/i.test(v.description));
 const idName = Object.fromEntries(ecoField.legalValues.map((v) => [v.value, clean(v.description)]));
 const prodIds = [
   ...ORDER.filter((id) => prodVals.some((v) => v.value === id)),
